@@ -16,7 +16,7 @@ class Parameter:
         self.p_map = np.zeros([self.nx, self.ny], dtype=float, )  # 概率分布地图
         self.t_map = np.zeros([self.nx, self.ny], dtype=float, )  # 目标位置地图
         self.g_map_l = np.ones([self.nx + 2, self.ny + 2], dtype=float, )
-        self.g_map_l[1:nx + 1, 1:ny + 1] = self.g_map  # 地理地图扩展
+        self.g_map_l[1:self.nx + 1, 1:self.ny + 1] = self.g_map  # 地理地图扩展
         self.nu = 12  # uav数量
         self.nt = 9  # 目标数量
         self.time_limit = 300  # 最大仿真时间
@@ -41,11 +41,11 @@ class Parameter:
         self.lampda2 = 1.  # lampda2
         self.t_type_num = 3.  # 目标种类
         self.t_det = 10.  #
-        self.v_target = 0.5  #
+        self.v_target = 0.5  # 目标速度
         self.found_counter = 0.  # 已找到目标数量
-        self.fd_ct_list = 0.  # 不同时刻找到的目标数量
+        self.fd_ct_list = -1 * np.ones([self.time_limit, ], dtype=float)  # 不同时刻找到的目标数量
         self.detect_map = np.zeros([self.nx, self.ny], dtype=float)
-        self.detect_list = []  # 记录对地图的探索度
+        self.detect_list = -1 * np.ones([self.time_limit, ], dtype=float) # 记录对地图的探索度
 
     def init_map(self):
         """
@@ -53,9 +53,9 @@ class Parameter:
         :return:
         """
         g_map = np.zeros([self.nx, self.ny], dtype=float)
-        Oxn = int(np.floor(self.nx / (self.ox + 1)))
-        Oyn = int(np.floor(self.ny / (self.oy + 1)))
-        for i in range(Oxn):
-            for j in range(Oyn):
+        oxn = int(np.floor(self.nx / (self.ox + 1)))
+        oyn = int(np.floor(self.ny / (self.oy + 1)))
+        for i in range(oxn):
+            for j in range(oyn):
                 g_map[4 * i - 2:4 * i, 4 * j - 2:4 * j] = 1
         return g_map
