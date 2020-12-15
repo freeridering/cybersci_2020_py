@@ -1,7 +1,11 @@
-class event_scheduling:
+import parameter
+
+
+class EventScheduling:
     def __init__(self):
-        event_list = []
-        timing = 0
+        self.event_list = []  # 事件列表
+        self.timing = 0  # 计时器
+        self.p = parameter.Parameter()  # 环境参数
 
     def add_evevt(self):
         """
@@ -23,4 +27,3 @@ class event_scheduling:
         :return:
         """
         pass
-
