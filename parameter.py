@@ -1,5 +1,4 @@
 import numpy as np
-import tensorflow as tf
 
 
 class Parameter:
@@ -37,16 +36,17 @@ class Parameter:
         self.beta = 1.0  # beta
         self.gama = 1.  # gama
         self.theta2 = 10.  # theta ^ 2
-        self.lampda1 = 1.  # lampda1
-        self.lampda2 = 1.  # lampda2
+        self.lampda_1 = 1.  # lampda1
+        self.lampda_2 = 1.  # lampda2
         self.t_type_num = 3.  # 目标种类
         self.t_det = 10.  #
         self.v_target = 0.5  # 目标速度
         self.found_counter = 0.  # 已找到目标数量
         self.fd_ct_list = -1 * np.ones([self.time_limit, ], dtype=float)  # 不同时刻找到的目标数量
         self.detect_map = np.zeros([self.nx, self.ny], dtype=float)
-        self.detect_list = -1 * np.ones([self.time_limit, ], dtype=float) # 记录对地图的探索度
-        self.max_way_num = 10 # 单架无人机搜索的最大路径数量
+        self.detect_list = -1 * np.ones([self.time_limit, ], dtype=float)  # 记录对地图的探索度
+        self.max_way_num = 10  # 单架无人机搜索的最大路径数量
+
     def init_map(self):
         """
 

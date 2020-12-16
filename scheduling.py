@@ -50,7 +50,8 @@ def uav_swarm_step(time_counter: int, p: parameter.Parameter, uavs: uav.UavSwarm
     p.S_r_p = p.S_r
     p.S_r = cal_S_r(p)
     search_way_local(p, uavs, targets)
-    cal_S_d_i(p, uavs, targets)
+    for i in range(p.nu):
+        cal_S_d_i(p, uavs.uavs[i], uavs)
     search_way_global(p, uavs, targets)
 
 
@@ -65,25 +66,75 @@ def search_way_global(p: parameter.Parameter, uavs: uav.UavSwarm, targets: targe
     pass
 
 
-def cal_S_d_i(p: parameter.Parameter, uavs: uav.UavSwarm, targets: target.TargetSwarm):
-    return []
+def cal_S_d_i(p: parameter.Parameter, uav: uav.UavSingle, uavs: uav.UavSwarm):
+    d_k = np.zeros([p.nx, p.ny, p.n_step], dtype=float)
+    u_l = np.zeros([p.nx, p.ny, p.n_step], dtype=float)
+    # 计算
+    for i in range(p.n_step):
+        for j in range(p.nu):
+            temp_x = uavs.uavs[i].way_local[i, 0]
+            temp_y = uavs.uavs[i].way_local[i, 1]
+            d_k[temp_x, temp_y, i] += 1
+        temp_x = uav.way_local[i, 0]
+        temp_y = uav.way_local[i, 1]
+        u_l[temp_x, temp_y, i] = 1
+    S_d = np.zeros([p.nx, p.ny], dtype=float)
+    for i in range(p.n_step):
+        for j in range(i):
+            S_d += np.exp(-j / p.n_step) * p.d_d * np.dot(u_l[:, :, j], d_k[:, :, j])
+    return S_d
+
+
+def cal_total_p_map(p: parameter.Parameter, targets: target.TargetSwarm):
+    p_map = np.dot(np.ones([p.nx, p.ny], dtype=float), ~p.g_map)
+    times_num = 0
+    for i in range(p.nt):
+        if targets.targets[i].foundflag == False:
+            times_num += 1
+            temppmap = (np.ones([p.nx, p.ny], dtype=float) - targets.targets[i].p_map) * 10
+            p_map = np.dot(p_map, temppmap)
+    p_map = np.ones([p.nx, p.ny], dtype=float) - p_map / (10 ** times_num)
+    p_map = np.dot(p_map, ~p.g_map)
+    return p_map
+
+
+def get_all_way_local(p: parameter.Parameter, temp_uav: uav.UavSingle):  # 针对单uav生成其最大数量可能路径
+    temp_x = temp_uav.pos_now[0]
+    temp_y = temp_uav.pos_now[1]
+    max_page = 4 ** (p.n_step - 1) - 1
+    for i in range(p.max_way_num):
+        way_map = np.zeros([p.nx, p.ny], dtype=float)
+    return -1 * temp_uav.all_way_local
+
+
+def cal_J_noSd(p: parameter.Parameter, uav: uav.UavSingle, temp_way_local: np.ndarray):
+    pass
 
 
 def search_way_local(p: parameter.Parameter, uavs: uav.UavSwarm, targets: target.TargetSwarm):
-    pass
+    p.p_map = cal_total_p_map(p, targets)
+    for i in range(p.nu):
+        uavs.uavs[i].all_way_local = get_all_way_local(p, uavs.uavs[i])
+        J_totnoSd = np.zeros(p.max_way_num, )
+        for j in range(p.max_way_num):
+            temp_way_local = uavs.uavs[i].all_way_local[j]
+            if temp_way_local[0] > -1:  # 合法路径
+                J_totnoSd[j] = cal_J_noSd(p, uavs.uavs[i], temp_way_local)
+        uavs.uavs[i].way_local = np.reshape(uavs.uavs[i].all_way_local[np.argmax(J_totnoSd)], [p.n_step, 2])
 
 
 def cal_GP_r(p: parameter.Parameter):
     GP_r = np.zeros([p.nx, p.ny], dtype=float)
-    temp_srp = np.zeros([p.nx+2,p.ny+2],dtype=float)
-    temp_srp[1:p.nx+1,1:p.ny+1]  = p.S_r_p
+    temp_srp = np.zeros([p.nx + 2, p.ny + 2], dtype=float)
+    temp_srp[1:p.nx + 1, 1:p.ny + 1] = p.S_r_p
     for i in range(p.nx):
         for j in range(p.ny):
-            grid_ln = temp_srp[i:i+3,j:j+3]  # 临近栅格
+            grid_ln = temp_srp[i:i + 3, j:j + 3]  # 临近栅格
             ln = np.count_nonzero(grid_ln)  # 非零元素个数
             if ln != 0:
                 GP_r[i, j] = p.G_r * (p.d_r + (np.sum(grid_ln) / ln))
     return GP_r
+
 
 def cal_S_r(p: parameter.Parameter):
     GP_r = cal_GP_r(p)

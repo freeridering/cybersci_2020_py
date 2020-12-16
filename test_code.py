@@ -9,6 +9,5 @@ aa = True
 bb = True
 cc = False
 
-ze = np.zeros([3,3],dtype=float)
-ze[1,1]  = 1
-print(np.count_nonzero(ze))
+tnp = np.ones([5,5,5])
+tnp[0,0,1]  +=1
