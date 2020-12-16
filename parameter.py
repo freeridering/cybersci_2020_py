@@ -14,8 +14,8 @@ class Parameter:
         self.liy = 4
         self.g_map = self.init_map()  # 地理地图
         self.p_map = np.zeros([self.nx, self.ny], dtype=float, )  # 概率分布地图
-        self.t_map = np.zeros([self.nx, self.ny], dtype=float, )  # 目标位置地图
-        self.g_map_l = np.ones([self.nx + 2, self.ny + 2], dtype=float, )
+        self.t_map = -1 * np.ones([self.nx, self.ny], dtype=int, )  # 目标位置地图,默认-1
+        self.g_map_l = np.ones([self.nx + 2, self.ny + 2], dtype=bool, )
         self.g_map_l[1:self.nx + 1, 1:self.ny + 1] = self.g_map  # 地理地图扩展
         self.nu = 12  # uav数量
         self.nt = 9  # 目标数量
@@ -46,16 +46,16 @@ class Parameter:
         self.fd_ct_list = -1 * np.ones([self.time_limit, ], dtype=float)  # 不同时刻找到的目标数量
         self.detect_map = np.zeros([self.nx, self.ny], dtype=float)
         self.detect_list = -1 * np.ones([self.time_limit, ], dtype=float) # 记录对地图的探索度
-
+        self.max_way_num = 10 # 单架无人机搜索的最大路径数量
     def init_map(self):
         """
 
         :return:
         """
-        g_map = np.zeros([self.nx, self.ny], dtype=float)
+        g_map = np.zeros([self.nx, self.ny], dtype=bool)
         oxn = int(np.floor(self.nx / (self.ox + 1)))
         oyn = int(np.floor(self.ny / (self.oy + 1)))
         for i in range(oxn):
             for j in range(oyn):
-                g_map[4 * i - 2:4 * i, 4 * j - 2:4 * j] = 1
+                g_map[4 * i - 2:4 * i, 4 * j - 2:4 * j] = True
         return g_map

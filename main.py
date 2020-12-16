@@ -3,9 +3,7 @@ import target
 import parameter
 from draw import *
 import numpy as np
-from scheduling import  *
-
-
+from scheduling import *
 
 if __name__ == '__main__':
     p = parameter.Parameter()  # 环境参数
@@ -16,8 +14,8 @@ if __name__ == '__main__':
         p.fd_ct_list[time_counter] = p.found_counter
         detect_sum = np.sum(p.detect_map) / np.sum(p.g_map)
         p.detect_list[time_counter] = detect_sum
-        uav_step(p, uavs, targets)
-        target_step(p, uavs, targets)
+        uav_swarm_step(time_counter, p, uavs, targets)
+        target_swarm_step(time_counter, p, uavs, targets)
         if p.found_counter == p.nt:
             print('在第%i步全都找到了' % time_counter)
             break
