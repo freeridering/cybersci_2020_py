@@ -66,7 +66,7 @@ def get_total_map(p: parameter.Parameter, targets: target.TargetSwarm):
     p_map = np.dot(np.ones([p.nx, p.ny]), ~p.g_map)
     time_num = 0
     for i in range(p.nt):
-        if targets.targets[i].foundflag == False:
+        if not targets.targets[i].foundflag:
             time_num += 1
             temp_p_map = np.ones([p.nx, p.ny], dtype=float) - targets.targets[i].p_map
             p_map = np.dot(p_map, temp_p_map)
@@ -101,7 +101,7 @@ def search_way_global(p: parameter.Parameter, uavs: uav.UavSwarm, targets: targe
         uavs.uavs[i].way_global = np.reshape(uavs.uavs[i].all_way_local[np.argmax(J_total)], [p.n_step, 2])
 
 
-def cal_S_d_i(p: parameter.Parameter, uav: uav.UavSingle, uavs: uav.UavSwarm):
+def cal_S_d_i(p: parameter.Parameter, temp_uav: uav.UavSingle, uavs: uav.UavSwarm):
     d_k = np.zeros([p.nx, p.ny, p.n_step], dtype=float)
     u_l = np.zeros([p.nx, p.ny, p.n_step], dtype=float)
     # 计算
@@ -109,7 +109,7 @@ def cal_S_d_i(p: parameter.Parameter, uav: uav.UavSingle, uavs: uav.UavSwarm):
         for j in range(p.nu):
             [temp_x, temp_y] = uavs.uavs[i].way_local[i]
             d_k[temp_x, temp_y, i] += 1
-        [temp_x, temp_y] = uav.way_local[i]
+        [temp_x, temp_y] = temp_uav.way_local[i]
         u_l[temp_x, temp_y, i] = 1
     S_d = np.zeros([p.nx, p.ny], dtype=float)
     for i in range(p.n_step):
@@ -122,7 +122,7 @@ def cal_total_p_map(p: parameter.Parameter, targets: target.TargetSwarm):
     p_map = np.dot(np.ones([p.nx, p.ny], dtype=float), ~p.g_map)
     times_num = 0
     for i in range(p.nt):
-        if targets.targets[i].foundflag == False:
+        if not targets.targets[i].foundflag:
             times_num += 1
             temppmap = (np.ones([p.nx, p.ny], dtype=float) - targets.targets[i].p_map) * 10
             p_map = np.dot(p_map, temppmap)
@@ -139,7 +139,7 @@ def get_all_way_local(p: parameter.Parameter, temp_uav: uav.UavSingle):  # 针�
     return -1 * temp_uav.all_way_local
 
 
-def cal_J_noSd(p: parameter.Parameter, uav: uav.UavSingle, temp_way_local: np.ndarray):
+def cal_J_noSd(p: parameter.Parameter, temp_uav: uav.UavSingle, temp_way_local: np.ndarray):
     J_c = 0  # 没有Sd调度信息素
     J_t = 0
     for i in range(p.n_step):
@@ -216,10 +216,10 @@ def detection(p: parameter.Parameter, temp_uav: uav.UavSingle, uavs: uav.UavSwar
         for i in range(p.nt):
             p.found_counter = p.found_counter + targets.targets[i].foundflag
     else:
-        for i in range(p.nt):
-            targets.targets[i].p_map[pos_nox_x, pos_nox_y] = 0
+        for j in range(p.nt):
+            targets.targets[j].p_map[pos_nox_x, pos_nox_y] = 0
             # 除法还未加入对全0的考虑，或许也可以不修改概率地图
-            targets.targets[i].p_map = targets.targets[i].p_map / np.sum(targets.targets[i].p_map)
+            targets.targets[j].p_map = targets.targets[j].p_map / np.sum(targets.targets[j].p_map)
 
 
 def target_swarm_step(time_counter: int, p: parameter.Parameter, uavs: uav.UavSwarm, targets: target.TargetSwarm):
@@ -228,8 +228,8 @@ def target_swarm_step(time_counter: int, p: parameter.Parameter, uavs: uav.UavSw
         targets.targets[i] = target_single_step(time_counter, p, uavs, targets.targets[i])
 
 
-def target_single_step(time_counter: int, p: parameter.Parameter, uavs: uav.UavSwarm, target: target.TargetSingle):
-    if target.foundflag == False:  # 没有被找到
-        target.path[time_counter] = target.pos_now.T  # 记录路径
+def target_single_step(time_counter: int, p: parameter.Parameter, uavs: uav.UavSwarm, temp_target: target.TargetSingle):
+    if not temp_target.foundflag:  # 没有被找到
+        temp_target.path[time_counter] = temp_target.pos_now.T  # 记录路径
         # 更新位置
-    return target
+    return temp_target
