@@ -62,8 +62,43 @@ def uav_single_step(time_counter: int, p: parameter.Parameter, uav: uav.UavSingl
     return uav
 
 
+def get_total_map(p: parameter.Parameter, targets: target.TargetSwarm):
+    p_map = np.dot(np.ones([p.nx, p.ny]), ~p.g_map)
+    time_num = 0
+    for i in range(p.nt):
+        if targets.targets[i].foundflag == False:
+            time_num += 1
+            temp_p_map = np.ones([p.nx, p.ny], dtype=float) - targets.targets[i].p_map
+            p_map = np.dot(p_map, temp_p_map)
+    p_map = np.ones([p.nx, p.ny], dtype=float) - p_map / (10 ** time_num)
+    p_map = np.dot(p_map, ~p.g_map)
+    return p_map
+
+
+def cal_J(p: parameter.Parameter, temp_uav: uav.UavSingle, temp_way_local: np.ndarray):
+    [temp_x, temp_y] = temp_uav.pos_now
+    J_c = -p.alpha * temp_uav.S_d[temp_x, temp_y]
+    J_t = 0
+    for i in range(p.n_step):
+        [temp_x, temp_y] = temp_way_local[i]
+        J_t = J_t + np.exp((1 - i) / p.n_step) * np.log(1 / (1 - p.p_map[temp_x, temp_y]))
+        J_c = J_c + np.exp((1 - i) / p.n_step) * p.beta * p.S_a[temp_x, temp_y] - p.gama * p.S_r[temp_x, temp_y]
+    # no TPM 则J_t = 0
+    # J_t = 0
+    # no DPM 则 J_c = 0
+    J_total = p.lampda_1 * J_t + p.lampda_2 * J_c
+    return J_total
+
+
 def search_way_global(p: parameter.Parameter, uavs: uav.UavSwarm, targets: target.TargetSwarm):
-    pass
+    p.p_map = get_total_map(p, targets)
+    for i in range(p.nu):
+        J_total = np.zeros([p.max_way_num, ], dtype=float)
+        for j in range(p.max_way_num):
+            temp_way_local = np.reshape(uavs.uavs[i].all_way_local[j], [p.n_step, 2])  # 重塑成 n_step*2的矩阵
+            if temp_way_local[0, 0] > -1:
+                J_total[j] = cal_J(p, uavs.uavs[i], temp_way_local)
+        uavs.uavs[i].way_global = np.reshape(uavs.uavs[i].all_way_local[np.argmax(J_total)], [p.n_step, 2])
 
 
 def cal_S_d_i(p: parameter.Parameter, uav: uav.UavSingle, uavs: uav.UavSwarm):
@@ -72,11 +107,9 @@ def cal_S_d_i(p: parameter.Parameter, uav: uav.UavSingle, uavs: uav.UavSwarm):
     # 计算
     for i in range(p.n_step):
         for j in range(p.nu):
-            temp_x = uavs.uavs[i].way_local[i, 0]
-            temp_y = uavs.uavs[i].way_local[i, 1]
+            [temp_x, temp_y] = uavs.uavs[i].way_local[i]
             d_k[temp_x, temp_y, i] += 1
-        temp_x = uav.way_local[i, 0]
-        temp_y = uav.way_local[i, 1]
+        [temp_x, temp_y] = uav.way_local[i]
         u_l[temp_x, temp_y, i] = 1
     S_d = np.zeros([p.nx, p.ny], dtype=float)
     for i in range(p.n_step):
@@ -99,8 +132,7 @@ def cal_total_p_map(p: parameter.Parameter, targets: target.TargetSwarm):
 
 
 def get_all_way_local(p: parameter.Parameter, temp_uav: uav.UavSingle):  # 针对单uav生成其最大数量可能路径
-    temp_x = temp_uav.pos_now[0]
-    temp_y = temp_uav.pos_now[1]
+    [temp_x, temp_y] = temp_uav.pos_now
     max_page = 4 ** (p.n_step - 1) - 1
     for i in range(p.max_way_num):
         way_map = np.zeros([p.nx, p.ny], dtype=float)
@@ -108,7 +140,17 @@ def get_all_way_local(p: parameter.Parameter, temp_uav: uav.UavSingle):  # 针�
 
 
 def cal_J_noSd(p: parameter.Parameter, uav: uav.UavSingle, temp_way_local: np.ndarray):
-    pass
+    J_c = 0  # 没有Sd调度信息素
+    J_t = 0
+    for i in range(p.n_step):
+        [temp_x, temp_y] = temp_way_local[i]
+        J_t = J_t + np.exp((1 - i) / p.n_step) * np.log(1 / (1 - p.p_map[temp_x, temp_y]))
+        J_c = J_c + np.exp((1 - i) / p.n_step) * p.beta * p.S_a[temp_x, temp_y] - p.gama * p.S_r[temp_x, temp_y]
+    # no TPM 则 J_t=0
+    # J_t = 0
+    # no DPM则 J_c = 0
+    J_total = p.lampda_1 * J_t + p.lampda_2 * J_c
+    return J_total
 
 
 def search_way_local(p: parameter.Parameter, uavs: uav.UavSwarm, targets: target.TargetSwarm):
@@ -117,8 +159,8 @@ def search_way_local(p: parameter.Parameter, uavs: uav.UavSwarm, targets: target
         uavs.uavs[i].all_way_local = get_all_way_local(p, uavs.uavs[i])
         J_totnoSd = np.zeros(p.max_way_num, )
         for j in range(p.max_way_num):
-            temp_way_local = uavs.uavs[i].all_way_local[j]
-            if temp_way_local[0] > -1:  # 合法路径
+            temp_way_local = np.reshape(uavs.uavs[i].all_way_local[j], [p.n_step, 2])
+            if temp_way_local[0, 0] > -1:  # 合法路径
                 J_totnoSd[j] = cal_J_noSd(p, uavs.uavs[i], temp_way_local)
         uavs.uavs[i].way_local = np.reshape(uavs.uavs[i].all_way_local[np.argmax(J_totnoSd)], [p.n_step, 2])
 
@@ -166,8 +208,7 @@ def cal_S_a(p: parameter.Parameter):
 
 
 def detection(p: parameter.Parameter, temp_uav: uav.UavSingle, uavs: uav.UavSwarm, targets: target.TargetSwarm):
-    pos_nox_x = temp_uav.pos_now[0]
-    pos_nox_y = temp_uav.pos_now[1]
+    [pos_nox_x, pos_nox_y] = temp_uav.pos_now
     t_map_num = p.t_map[pos_nox_x, pos_nox_y]
     if t_map_num != -1:  # 遇到目标
         targets.targets[t_map_num].foundflag = True

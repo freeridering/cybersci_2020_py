@@ -1,13 +1,17 @@
 import numpy as np
+class po:
+    def __init__(self):
+        self.p =  [1,2,3,4,5]
+class cc:
+    def __init__(self):
+        self.i = []
+        self.p = po()
+        self.i = [self.p,[0,1]]
+ccc = cc()
+def cal_po(po:po):
+    po.p.append(6)
+def cal_cc(ccc:cc):
+    cal_po(ccc.i[0])
 
-a = np.zeros([2, ], dtype=int)
-b = np.zeros([1, 3], dtype=float)
-c = np.ones([10, 2], dtype=float)
-c[0] = a.T
-
-aa = True
-bb = True
-cc = False
-
-tnp = np.ones([5,5,5])
-tnp[0,0,1]  +=1
+cal_cc(ccc)
+print(ccc)
