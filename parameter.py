@@ -11,13 +11,15 @@ class Parameter:
         self.oy = 3
         self.lix = 4  # 方格长宽
         self.liy = 4
-        self.g_map = self.init_map()  # 地理地图
+        self.g_map = np.ones([self.nx, self.ny], dtype=bool)
+        self.g_map[0::(self.ox + 1), :] = False
+        self.g_map[:, 0::(self.oy + 1)] = False
+        self.g_map_l = np.pad(self.g_map, ((2, 2), (2, 2)), 'constant',constant_values=True)  # 地理地图扩展
+        # self.g_map = self.init_map()  # 地理地图
         self.p_map = np.zeros([self.nx, self.ny], dtype=float, )  # 概率分布地图
         self.t_map = -1 * np.ones([self.nx, self.ny], dtype=int, )  # 目标位置地图,默认-1
-        self.g_map_l = np.ones([self.nx + 2, self.ny + 2], dtype=bool, )
-        self.g_map_l[1:self.nx + 1, 1:self.ny + 1] = self.g_map  # 地理地图扩展
-        self.nu = 12  # uav数量
-        self.nt = 9  # 目标数量
+        self.nu = 12  # uav数量,必须是4的倍数
+        self.nt = 9  # 目标数量，必须可以开根
         self.time_limit = 300  # 最大仿真时间
         self.n_step = 5  # 预测周期
         self.d_d = 5  # dd
@@ -53,9 +55,10 @@ class Parameter:
         :return:
         """
         g_map = np.zeros([self.nx, self.ny], dtype=bool)
-        oxn = int(np.floor(self.nx / (self.ox + 1)))
-        oyn = int(np.floor(self.ny / (self.oy + 1)))
+        oxn = int(np.floor(self.nx / (self.ox + 1))) + 1
+        oyn = int(np.floor(self.ny / (self.oy + 1))) + 1
+
         for i in range(oxn):
             for j in range(oyn):
-                g_map[4 * i - 2:4 * i, 4 * j - 2:4 * j] = True
+                g_map[4 * i - 3:4 * i, 4 * j - 3:4 * j] = True
         return g_map

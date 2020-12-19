@@ -63,15 +63,15 @@ def uav_single_step(time_counter: int, p: parameter.Parameter, uav: uav.UavSingl
 
 
 def get_total_map(p: parameter.Parameter, targets: target.TargetSwarm):
-    p_map = np.dot(np.ones([p.nx, p.ny]), ~p.g_map)
+    p_map = np.ones([p.nx, p.ny]) * (~p.g_map)
     time_num = 0
     for i in range(p.nt):
-        if not targets.targets[i].foundflag:
+        if not targets.targets[i].found_flag:
             time_num += 1
             temp_p_map = np.ones([p.nx, p.ny], dtype=float) - targets.targets[i].p_map
-            p_map = np.dot(p_map, temp_p_map)
+            p_map = p_map * temp_p_map
     p_map = np.ones([p.nx, p.ny], dtype=float) - p_map / (10 ** time_num)
-    p_map = np.dot(p_map, ~p.g_map)
+    p_map = p_map* (~p.g_map)
     return p_map
 
 
@@ -114,20 +114,20 @@ def cal_S_d_i(p: parameter.Parameter, temp_uav: uav.UavSingle, uavs: uav.UavSwar
     S_d = np.zeros([p.nx, p.ny], dtype=float)
     for i in range(p.n_step):
         for j in range(i):
-            S_d += np.exp(-j / p.n_step) * p.d_d * np.dot(u_l[:, :, j], d_k[:, :, j])
+            S_d += np.exp(-j / p.n_step) * p.d_d * (u_l[:, :, j]* d_k[:, :, j])
     return S_d
 
 
 def cal_total_p_map(p: parameter.Parameter, targets: target.TargetSwarm):
-    p_map = np.dot(np.ones([p.nx, p.ny], dtype=float), ~p.g_map)
+    p_map = np.ones([p.nx, p.ny], dtype=float)*(~p.g_map)
     times_num = 0
     for i in range(p.nt):
-        if not targets.targets[i].foundflag:
+        if not targets.targets[i].found_flag:
             times_num += 1
             temppmap = (np.ones([p.nx, p.ny], dtype=float) - targets.targets[i].p_map) * 10
-            p_map = np.dot(p_map, temppmap)
+            p_map = p_map* temppmap
     p_map = np.ones([p.nx, p.ny], dtype=float) - p_map / (10 ** times_num)
-    p_map = np.dot(p_map, ~p.g_map)
+    p_map = p_map*( ~p.g_map)
     return p_map
 
 
@@ -181,7 +181,7 @@ def cal_GP_r(p: parameter.Parameter):
 def cal_S_r(p: parameter.Parameter):
     GP_r = cal_GP_r(p)
     S_r = (1 - p.E_r) * ((1 - p.G_r) * (p.S_r_p + p.d_r * p.V) + GP_r)
-    S_r = np.dot(S_r, ~p.g_map)
+    S_r = S_r*( ~p.g_map)
     return S_r
 
 
@@ -203,7 +203,7 @@ def cal_S_a(p: parameter.Parameter):
     E = np.ones([p.nx, p.ny], dtype=float)
     GP_a = cal_GP_a(p)
     S_a = (1 - p.E_a) * ((1 - p.G_a) * (p.S_a_p + p.d_a * (E - p.V)) + GP_a)
-    S_a = np.dot(S_a, ~p.g_map)
+    S_a = S_a*( ~p.g_map)
     return S_a
 
 
@@ -211,10 +211,10 @@ def detection(p: parameter.Parameter, temp_uav: uav.UavSingle, uavs: uav.UavSwar
     [pos_nox_x, pos_nox_y] = temp_uav.pos_now
     t_map_num = p.t_map[pos_nox_x, pos_nox_y]
     if t_map_num != -1:  # 遇到目标
-        targets.targets[t_map_num].foundflag = True
+        targets.targets[t_map_num].found_flag = True
         p.found_counter = 0
         for i in range(p.nt):
-            p.found_counter = p.found_counter + targets.targets[i].foundflag
+            p.found_counter = p.found_counter + targets.targets[i].found_flag
     else:
         for j in range(p.nt):
             targets.targets[j].p_map[pos_nox_x, pos_nox_y] = 0
@@ -229,7 +229,7 @@ def target_swarm_step(time_counter: int, p: parameter.Parameter, uavs: uav.UavSw
 
 
 def target_single_step(time_counter: int, p: parameter.Parameter, uavs: uav.UavSwarm, temp_target: target.TargetSingle):
-    if not temp_target.foundflag:  # 没有被找到
+    if not temp_target.found_flag:  # 没有被找到
         temp_target.path[time_counter] = temp_target.pos_now.T  # 记录路径
         # 更新位置
     return temp_target

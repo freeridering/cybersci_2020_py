@@ -1,17 +1,17 @@
 import numpy as np
-class po:
-    def __init__(self):
-        self.p =  [1,2,3,4,5]
-class cc:
-    def __init__(self):
-        self.i = []
-        self.p = po()
-        self.i = [self.p,[0,1]]
-ccc = cc()
-def cal_po(po:po):
-    po.p.append(6)
-def cal_cc(ccc:cc):
-    cal_po(ccc.i[0])
+import scipy.integrate
+import math
+import parameter
+import scipy.stats
 
-cal_cc(ccc)
-print(ccc)
+
+
+a = np.ones([3,3],dtype=float)
+b  = ~np.ones([3,3],dtype=bool)
+b[0,1] = True
+print(b)
+b[2,1] = True
+print(b)
+print(a)
+c= a*b
+print(c)
