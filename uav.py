@@ -4,12 +4,13 @@ import numpy as np
 
 class UavSwarm:
     def __init__(self, p: parameter.Parameter):
-        self.uavs = [None] * p.nu
+        self.uavs = [UavSingle(0,p)] * p.nu
         for i in range(p.nu):
             self.uavs[i] = UavSingle(i, p)
 
 
 class UavSingle:  # 单个无人机
+
     def __init__(self, uid, p: parameter.Parameter):
         self.uid = uid  # uav的id
         self.pos_now = self.init_pos_now(uid, p)
@@ -29,7 +30,7 @@ class UavSingle:  # 单个无人机
         """
         pos_now = np.zeros([2, ], dtype=int)
         if uid < p.nu / 2:
-            flex_axis = (uid // 2 + 1) * np.round(p.nx // (p.ox + 1) / (p.ox + 1)) * (p.ox + 1) - 1
+            flex_axis = (uid // 2 + 1) * np.round(p.nx // (p.ox + 1) / (p.ox + 1)) * (p.ox + 1)
             if uid % 2 == 0:
                 pos_now[0] = flex_axis
                 pos_now[1] = 0
@@ -38,7 +39,7 @@ class UavSingle:  # 单个无人机
                 pos_now[1] = p.nx - 1
         else:
             uid = uid - p.nu / 2
-            flex_axis = (uid // 2 + 1) * np.round(p.ny // (p.oy + 1) / (p.nu/4+1)) * (p.oy + 1) - 1
+            flex_axis = (uid // 2 + 1) * np.round(p.ny // (p.oy + 1) / (p.nu/4+1)) * (p.oy + 1)
             if uid % 2 == 0:
                 pos_now[0] = 0
                 pos_now[1] = flex_axis

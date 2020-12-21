@@ -3,15 +3,9 @@ import scipy.integrate
 import math
 import parameter
 import scipy.stats
+import  random
 
-
-
-a = np.ones([3,3],dtype=float)
-b  = ~np.ones([3,3],dtype=bool)
-b[0,1] = True
-print(b)
-b[2,1] = True
-print(b)
-print(a)
-c= a*b
-print(c)
+a_set =set({1,2,3,4,5})
+print(a_set)
+a_list = list(a_set)
+print(a_list)

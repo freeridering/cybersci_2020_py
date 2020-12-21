@@ -2,6 +2,7 @@ import parameter
 import numpy as np
 import uav
 import target
+import random
 
 
 #
@@ -38,13 +39,7 @@ def uav_swarm_step(time_counter: int, p: parameter.Parameter, uavs: uav.UavSwarm
     p.S_a_p = p.S_a
     p.S_r_p = p.S_r
     p.V = np.zeros([p.nx, p.ny], dtype=float)
-    for i in range(p.nu):
-        p.detect_map[uavs.uavs[i].pos_now[0], uavs.uavs[i].pos_now[1]] = 1
-        p.V[uavs.uavs[i].pos_now[0], uavs.uavs[i].pos_now[1]] = 1
-        # 更新单无人机信息
-        uavs.uavs[i] = uav_single_step(time_counter, p, uavs.uavs[i], targets)
-        # 更新概率图
-        detection(p, uavs.uavs[i], uavs, targets)
+    # 求下一步策略
     p.S_a_p = p.S_a
     p.S_a = cal_S_a(p)
     p.S_r_p = p.S_r
@@ -53,13 +48,24 @@ def uav_swarm_step(time_counter: int, p: parameter.Parameter, uavs: uav.UavSwarm
     for i in range(p.nu):
         cal_S_d_i(p, uavs.uavs[i], uavs)
     search_way_global(p, uavs, targets)
+    for i in range(p.nu):
+        p.detect_map[uavs.uavs[i].pos_now[0], uavs.uavs[i].pos_now[1]] = 1
+        p.V[uavs.uavs[i].pos_now[0], uavs.uavs[i].pos_now[1]] = 1
+        # 更新单无人机信息
+        # uavs.uavs[i] = uav_single_step(time_counter, p, uavs.uavs[i], targets)
+        uavs.uavs[i].pos_past = uavs.uavs[i].pos_now
+        uavs.uavs[i].path[time_counter] = uavs.uavs[i].pos_now
+        # 改变位置
+        uavs.uavs[i].pos_now = uavs.uavs[i].way_global[0]  # 更新当前位置
+        # 更新概率图
+        detection(p, uavs.uavs[i], uavs, targets)
 
 
-def uav_single_step(time_counter: int, p: parameter.Parameter, uav: uav.UavSingle, targets: target.TargetSwarm):
-    uav.path[time_counter] = uav.pos_now.T  # 记录路径
-    uav.pos_past = uav.pos_now  # 赋值上一时刻点
-    uav.pos_now = uav.way_global[0]  # 更新当前位置
-    return uav
+# def uav_single_step(time_counter: int, p: parameter.Parameter, temp_uav: uav.UavSingle, targets: target.TargetSwarm):
+#     temp_uav.path[time_counter] = temp_uav.pos_now.T  # 记录路径
+#     temp_uav.pos_past = temp_uav.pos_now  # 赋值上一时刻点
+#     temp_uav.pos_now = temp_uav.way_global[0]  # 更新当前位置
+#     return temp_uav
 
 
 def get_total_map(p: parameter.Parameter, targets: target.TargetSwarm):
@@ -71,7 +77,7 @@ def get_total_map(p: parameter.Parameter, targets: target.TargetSwarm):
             temp_p_map = np.ones([p.nx, p.ny], dtype=float) - targets.targets[i].p_map
             p_map = p_map * temp_p_map
     p_map = np.ones([p.nx, p.ny], dtype=float) - p_map / (10 ** time_num)
-    p_map = p_map* (~p.g_map)
+    p_map = p_map * (~p.g_map)
     return p_map
 
 
@@ -114,29 +120,42 @@ def cal_S_d_i(p: parameter.Parameter, temp_uav: uav.UavSingle, uavs: uav.UavSwar
     S_d = np.zeros([p.nx, p.ny], dtype=float)
     for i in range(p.n_step):
         for j in range(i):
-            S_d += np.exp(-j / p.n_step) * p.d_d * (u_l[:, :, j]* d_k[:, :, j])
+            S_d += np.exp(-j / p.n_step) * p.d_d * (u_l[:, :, j] * d_k[:, :, j])
     return S_d
 
 
 def cal_total_p_map(p: parameter.Parameter, targets: target.TargetSwarm):
-    p_map = np.ones([p.nx, p.ny], dtype=float)*(~p.g_map)
+    p_map = np.ones([p.nx, p.ny], dtype=float) * (~p.g_map)
     times_num = 0
     for i in range(p.nt):
         if not targets.targets[i].found_flag:
             times_num += 1
-            temppmap = (np.ones([p.nx, p.ny], dtype=float) - targets.targets[i].p_map) * 10
-            p_map = p_map* temppmap
+            temp_map = (np.ones([p.nx, p.ny], dtype=float) - targets.targets[i].p_map) * 10
+            p_map = p_map * temp_map
     p_map = np.ones([p.nx, p.ny], dtype=float) - p_map / (10 ** times_num)
-    p_map = p_map*( ~p.g_map)
+    p_map = p_map * (~p.g_map)
     return p_map
 
 
 def get_all_way_local(p: parameter.Parameter, temp_uav: uav.UavSingle):  # 针对单uav生成其最大数量可能路径
-    [temp_x, temp_y] = temp_uav.pos_now
-    max_page = 4 ** (p.n_step - 1) - 1
-    for i in range(p.max_way_num):
-        way_map = np.zeros([p.nx, p.ny], dtype=float)
-    return -1 * temp_uav.all_way_local
+    init_pos = temp_uav.pos_now
+    all_way_local = -1 * np.ones([p.max_way_num, p.n_step * 2], dtype=int)  # 某一决策周期uav的所有可行路径，可以设定最大条数
+    all_way_local = call_path(init_pos, np.array([]), all_way_local, 0, 0, p)
+    temp_uav.all_way_local = all_way_local
+
+
+def call_path(pos_now, way, all_way, i_step, i_way, p: parameter.Parameter):
+    pos_avi = np.tile(pos_now.T, (4, 1)) + np.array([[-1, 0], [1, 0], [0, -1], [0, 1]])
+    for i in range(len(pos_avi)):
+        if pos_avi[i][0] in range(p.nx) and pos_avi[i][1] in range(p.ny):
+            if not p.g_map[pos_avi[i][0], pos_avi[i][1]]:
+                way[i_step] = pos_avi[i]
+                if i_step < p.n_step - 1:
+                    all_way = call_path(pos_avi[i], way, all_way, i_step + 1, i_way, p)
+                else:
+                    all_way[i_way] = way
+                    i_way += 1
+    return all_way
 
 
 def cal_J_noSd(p: parameter.Parameter, temp_uav: uav.UavSingle, temp_way_local: np.ndarray):
@@ -181,7 +200,7 @@ def cal_GP_r(p: parameter.Parameter):
 def cal_S_r(p: parameter.Parameter):
     GP_r = cal_GP_r(p)
     S_r = (1 - p.E_r) * ((1 - p.G_r) * (p.S_r_p + p.d_r * p.V) + GP_r)
-    S_r = S_r*( ~p.g_map)
+    S_r = S_r * (~p.g_map)
     return S_r
 
 
@@ -203,7 +222,7 @@ def cal_S_a(p: parameter.Parameter):
     E = np.ones([p.nx, p.ny], dtype=float)
     GP_a = cal_GP_a(p)
     S_a = (1 - p.E_a) * ((1 - p.G_a) * (p.S_a_p + p.d_a * (E - p.V)) + GP_a)
-    S_a = S_a*( ~p.g_map)
+    S_a = S_a * (~p.g_map)
     return S_a
 
 
@@ -225,11 +244,69 @@ def detection(p: parameter.Parameter, temp_uav: uav.UavSingle, uavs: uav.UavSwar
 def target_swarm_step(time_counter: int, p: parameter.Parameter, uavs: uav.UavSwarm, targets: target.TargetSwarm):
     p.t_map = -1 * np.ones([p.nx, p.ny], dtype=int)  # 目标地图清零
     for i in range(p.nt):
-        targets.targets[i] = target_single_step(time_counter, p, uavs, targets.targets[i])
+        if not targets.targets[i].found_flag:  # 没有被找到
+            targets.targets[i].path[time_counter] = targets.targets[i].pos_now.T  # 记录路径
+            # 更新位置
+            pos_now = np.zeros([2, ], dtype=int)
+            if targets.targets[i].type == 0 or targets.targets[i].type == 2:
+                while True:
+                    step = random.choice(np.array([[1, 0], [-1, 0], [0, 1], [0, -1]], dtype=int))  # 下一步的位移
+                    pos_now = targets.targets[i].pos_now + step
+                    if not p.g_map_l[pos_now[0] + 2, pos_now[1] + 2]:
+                        break
+            elif targets.targets[i].type == 1:
+                if targets.targets[i].move_dir == 0:  # 上下运动,变y不变x
+                    while True:
+                        step = random.choice(np.array([[0, 1], [0, -1]], dtype=int))  # 下一步的位移
+                        pos_now = targets.targets[i].pos_now + step
+                        if not p.g_map[p.g_map[pos_now[0], pos_now[1]]]:
+                            break
+                elif targets.targets[i].move_dir == 1:
+                    while True:
+                        step = random.choice(np.array([[1, 0], [-1, 0]], dtype=int))  # 下一步的位移
+                        pos_now = targets.targets[i].pos_now + step
+                        if not p.g_map[p.g_map[pos_now[0], pos_now[1]]]:
+                            break
+                else:
+                    print('move_dir error')
+                    exit(0)
+            else:
+                print('type error')
+                exit(0)
+            targets.targets[i].pos_now = pos_now
+            p.t_map[pos_now[0], pos_now[1]] = targets.targets[i].tid
 
-
-def target_single_step(time_counter: int, p: parameter.Parameter, uavs: uav.UavSwarm, temp_target: target.TargetSingle):
-    if not temp_target.found_flag:  # 没有被找到
-        temp_target.path[time_counter] = temp_target.pos_now.T  # 记录路径
-        # 更新位置
-    return temp_target
+#
+# def target_single_step(time_counter: int, p: parameter.Parameter, uavs: uav.UavSwarm, temp_target: target.TargetSingle):
+#     temp_target.path[time_counter] = temp_target.pos_now.T  # 记录路径
+#     # 更新位置
+#     pos_now = np.zeros([2, ], dtype=int)
+#     if temp_target.type == 0 or temp_target.type == 2:
+#         while True:
+#             step = random.choice(np.array([[1, 0], [-1, 0], [0, 1], [0, -1]], dtype=int))  # 下一步的位移
+#             pos_now = temp_target.pos_now + step
+#             if not p.g_map_l[pos_now[0] + 2, pos_now[1] + 2]:
+#                 break
+#     elif temp_target.type == 1:
+#         if temp_target.move_dir == 0:  # 上下运动,变y不变x
+#             while True:
+#                 step = random.choice(np.array([[0, 1], [0, -1]], dtype=int))  # 下一步的位移
+#                 pos_now = temp_target.pos_now + step
+#                 if not p.g_map[p.g_map[pos_now[0], pos_now[1]]]:
+#                     break
+#         elif temp_target.move_dir == 1:
+#             while True:
+#                 step = random.choice(np.array([[1, 0], [-1, 0]], dtype=int))  # 下一步的位移
+#                 pos_now = temp_target.pos_now + step
+#                 if not p.g_map[p.g_map[pos_now[0], pos_now[1]]]:
+#                     break
+#         else:
+#             print('move_dir error')
+#             exit(0)
+#     else:
+#         print('type error')
+#         exit(0)
+#     temp_target.pos_now = pos_now
+#     p.t_map[pos_now[0], pos_now[1]] = temp_target.tid
+#
+#     return temp_target

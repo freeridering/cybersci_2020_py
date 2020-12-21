@@ -40,7 +40,7 @@ class Parameter:
         self.theta2 = 10.  # theta ^ 2
         self.lampda_1 = 1.  # lampda1
         self.lampda_2 = 1.  # lampda2
-        self.t_type_num = 3.  # 目标种类
+        self.t_type_num = 3  # 目标种类
         self.t_det = 10.  #
         self.v_target = 0.5  # 目标速度
         self.found_counter = 0.  # 已找到目标数量
