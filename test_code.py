@@ -3,9 +3,12 @@ import scipy.integrate
 import math
 import parameter
 import scipy.stats
-import  random
+import random
+import pickle
 
-a_set =set({1,2,3,4,5})
-print(a_set)
-a_list = list(a_set)
-print(a_list)
+pickle_file = open('result.pkl', 'rb')
+data = pickle.load(pickle_file)
+p = data['p']  # 环境参数
+uavs = data['uavs']  # 初始化无人机群
+targets = data['targets']  # 初始化目标
+pickle_file.close()

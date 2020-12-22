@@ -39,3 +39,8 @@ if __name__ == '__main__':
             draw_map(3, p, uavs, targets)
         time_counter += 1
     print('main finished')
+    data = {'uavs': uavs, 'targets': targets, 'p': p}
+    with open('result.pkl', 'wb') as f:
+        pickle.dump(data, f, 0)
+        f.close()
+    pickle_file.close()

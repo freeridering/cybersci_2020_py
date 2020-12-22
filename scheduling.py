@@ -39,15 +39,7 @@ def uav_swarm_step(time_counter: int, p: parameter.Parameter, uavs: uav.UavSwarm
     p.S_a_p = p.S_a
     p.S_r_p = p.S_r
     p.V = np.zeros([p.nx, p.ny], dtype=float)
-    # 求下一步策略
-    p.S_a_p = p.S_a
-    p.S_a = cal_S_a(p)
-    p.S_r_p = p.S_r
-    p.S_r = cal_S_r(p)
-    search_way_local(p, uavs, targets)
-    for i in range(p.nu):
-        cal_S_d_i(p, uavs.uavs[i], uavs)
-    search_way_global(p, uavs, targets)
+
     for i in range(p.nu):
         p.detect_map[uavs.uavs[i].pos_now[0], uavs.uavs[i].pos_now[1]] = 1
         p.V[uavs.uavs[i].pos_now[0], uavs.uavs[i].pos_now[1]] = 1
@@ -59,6 +51,15 @@ def uav_swarm_step(time_counter: int, p: parameter.Parameter, uavs: uav.UavSwarm
         uavs.uavs[i].pos_now = uavs.uavs[i].way_global[0]  # 更新当前位置
         # 更新概率图
         detection(p, uavs.uavs[i], uavs, targets)
+    # 求下一步策略
+    p.S_a_p = p.S_a
+    p.S_a = cal_S_a(p)
+    p.S_r_p = p.S_r
+    p.S_r = cal_S_r(p)
+    search_way_local(p, uavs, targets)
+    for i in range(p.nu):
+        cal_S_d_i(p, uavs.uavs[i], uavs)
+    search_way_global(p, uavs, targets)
 
 
 # def uav_single_step(time_counter: int, p: parameter.Parameter, temp_uav: uav.UavSingle, targets: target.TargetSwarm):
@@ -94,8 +95,6 @@ def cal_J(p: parameter.Parameter, temp_uav: uav.UavSingle, temp_way_local: np.nd
     # no DPM 则 J_c = 0
     J_total = p.lampda_1 * J_t + p.lampda_2 * J_c
     return J_total
-
-
 def search_way_global(p: parameter.Parameter, uavs: uav.UavSwarm, targets: target.TargetSwarm):
     p.p_map = get_total_map(p, targets)
     for i in range(p.nu):
@@ -140,22 +139,33 @@ def cal_total_p_map(p: parameter.Parameter, targets: target.TargetSwarm):
 def get_all_way_local(p: parameter.Parameter, temp_uav: uav.UavSingle):  # 针对单uav生成其最大数量可能路径
     init_pos = temp_uav.pos_now
     all_way_local = -1 * np.ones([p.max_way_num, p.n_step * 2], dtype=int)  # 某一决策周期uav的所有可行路径，可以设定最大条数
-    all_way_local = call_path(init_pos, np.array([]), all_way_local, 0, 0, p)
-    temp_uav.all_way_local = all_way_local
+    init_way = np.zeros([p.n_step + 1, 2], dtype=int)
+    init_way[0] = init_pos
+    all_way_local, i_way = call_path(init_pos, init_way, all_way_local, i_step=1, i_way=0, p=p)
+    return all_way_local
 
 
 def call_path(pos_now, way, all_way, i_step, i_way, p: parameter.Parameter):
     pos_avi = np.tile(pos_now.T, (4, 1)) + np.array([[-1, 0], [1, 0], [0, -1], [0, 1]])
-    for i in range(len(pos_avi)):
-        if pos_avi[i][0] in range(p.nx) and pos_avi[i][1] in range(p.ny):
-            if not p.g_map[pos_avi[i][0], pos_avi[i][1]]:
-                way[i_step] = pos_avi[i]
-                if i_step < p.n_step - 1:
-                    all_way = call_path(pos_avi[i], way, all_way, i_step + 1, i_way, p)
+    for i, next_pos in enumerate(pos_avi):
+        if next_pos[0] in range(p.nx) and next_pos[1] in range(p.ny) and not p.g_map[next_pos[0], next_pos[1]]:
+            if i_step > 1 and not (next_pos == way[i_step - 2]).all():
+                new_way = np.copy(way)
+                new_way[i_step] = next_pos
+                if i_step < p.n_step:
+                    all_way, i_way = call_path(next_pos, new_way, all_way, i_step + 1, i_way, p)
                 else:
-                    all_way[i_way] = way
+                    all_way[i_way] = np.reshape(new_way[1:, :], [1, p.n_step * 2])
                     i_way += 1
-    return all_way
+            elif i_step < 2:
+                new_way = np.copy(way)
+                new_way[i_step] = next_pos
+                if i_step < p.n_step:
+                    all_way, i_way = call_path(next_pos, new_way, all_way, i_step + 1, i_way, p)
+                else:
+                    all_way[i_way] = np.reshape(new_way, [1, p.n_step * 2])
+                    i_way += 1
+    return all_way, i_way
 
 
 def cal_J_noSd(p: parameter.Parameter, temp_uav: uav.UavSingle, temp_way_local: np.ndarray):
