@@ -173,11 +173,16 @@ def cal_J_noSd(p: parameter.Parameter, temp_uav: uav.UavSingle, temp_way_local: 
     J_t = 0
     for i in range(p.n_step):
         [temp_x, temp_y] = temp_way_local[i]
+        p_map_xy = p.p_map[temp_x, temp_y]
+        temp_J_t = np.exp((1 - i) / p.n_step) * np.log(1 / (1 - p.p_map[temp_x, temp_y]))
         J_t = J_t + np.exp((1 - i) / p.n_step) * np.log(1 / (1 - p.p_map[temp_x, temp_y]))
+        p_S_a_xy = p.S_a[temp_x, temp_y]
+        p_S_r_xy = p.S_r[temp_x, temp_y]
         J_c = J_c + np.exp((1 - i) / p.n_step) * p.beta * p.S_a[temp_x, temp_y] - p.gama * p.S_r[temp_x, temp_y]
     # no TPM 则 J_t=0
     # J_t = 0
     # no DPM则 J_c = 0
+    ratio = p.lampda_1 * J_t/(p.lampda_2 * J_c)
     J_total = p.lampda_1 * J_t + p.lampda_2 * J_c
     return J_total
 
