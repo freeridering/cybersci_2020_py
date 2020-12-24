@@ -3,14 +3,12 @@ import parameter
 import math
 import scipy.integrate
 import random
+import  typing
 
-
-class TargetSwarm:
-    def __init__(self, p: parameter.Parameter):
-        self.targets = [TargetSingle(0, p)] * p.nt
-        for i in range(p.nt):
-            self.targets[i] = TargetSingle(i, p)
-
+# class TargetSwarm:
+#     def __init__(self, p: parameter.Parameter):
+#         self.targets = [TargetSingle(i, p) for i in range(p.nt)]
+#
 
 class TargetSingle:
     def __init__(self, tid: int, p: parameter.Parameter):
@@ -71,3 +69,5 @@ class TargetSingle:
 #     theta_mus = 1/(2*p.theta2)
 #     res = np.exp(-theta_mus*((x-pos_d_l[0])**2+(y-pos_d_l[1])**2))*theta_mus/math.pi
 #     return  res
+
+Target_Swarm =typing.List[TargetSingle]

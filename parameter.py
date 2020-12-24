@@ -1,6 +1,7 @@
 import numpy as np
 
 
+
 class Parameter:
     def __init__(self):
         nx = 20
@@ -16,7 +17,7 @@ class Parameter:
         self.g_map[:, 0::(self.oy + 1)] = False
         self.g_map_l = np.pad(self.g_map, ((2, 2), (2, 2)), 'constant',constant_values=True)  # 地理地图扩展
         # self.g_map = self.init_map()  # 地理地图
-        self.p_map = np.zeros([self.nx, self.ny], dtype=float, )  # 概率分布地图
+        self.p_map =  np.ones([self.nx, self.ny],dtype=float) * (~self.g_map)  # 概率分布地图
         self.t_map = -1 * np.ones([self.nx, self.ny], dtype=int, )  # 目标位置地图,默认-1
         self.nu = 12  # uav数量,必须是4的倍数
         self.nt = 9  # 目标数量，必须可以开根
@@ -47,8 +48,7 @@ class Parameter:
         self.fd_ct_list = -1 * np.ones([self.time_limit, ], dtype=float)  # 不同时刻找到的目标数量
         self.detect_map = np.zeros([self.nx, self.ny], dtype=float)
         self.detect_list = -1 * np.ones([self.time_limit, ], dtype=float)  # 记录对地图的探索度
-        self.max_way_num = 10  # 单架无人机搜索的最大路径数量
-
+        self.max_way_num = 12 # 单架无人机搜索的最大路径数量
     def init_map(self):
         """
 

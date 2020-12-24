@@ -1,14 +1,20 @@
 import numpy as np
 import scipy.integrate
 import math
+
+from typing import List
+
 import parameter
 import scipy.stats
 import random
 import pickle
+import  target
+import  parameter
+import  uav
 
-pickle_file = open('result.pkl', 'rb')
-data = pickle.load(pickle_file)
-p = data['p']  # 环境参数
-uavs = data['uavs']  # 初始化无人机群
-targets = data['targets']  # 初始化目标
-pickle_file.close()
+def list_tar(target_swarm: List[target.TargetSingle]):
+    print(target_swarm[1].p_map)
+
+p = parameter.Parameter()
+target_swarm =   [target.TargetSingle(i,p) for i in range(p.nt)]
+list_tar(target_swarm)

@@ -1,13 +1,11 @@
 import parameter
 import numpy as np
+import  typing
 
-
-class UavSwarm:
-    def __init__(self, p: parameter.Parameter):
-        self.uavs = [UavSingle(0,p)] * p.nu
-        for i in range(p.nu):
-            self.uavs[i] = UavSingle(i, p)
-
+# class UavSwarm:
+#     def __init__(self, p: parameter.Parameter):
+#         self.uavs = [UavSingle(i,p) for i in range(p.nu)]
+#
 
 class UavSingle:  # 单个无人机
 
@@ -47,3 +45,6 @@ class UavSingle:  # 单个无人机
                 pos_now[0] = p.nx - 1
                 pos_now[1] = flex_axis
         return pos_now
+
+
+Uav_Swarm  = typing.List[UavSingle]
