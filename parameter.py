@@ -49,6 +49,8 @@ class Parameter:
         self.detect_map = np.zeros([self.nx, self.ny], dtype=float)
         self.detect_list = -1 * np.ones([self.time_limit, ], dtype=float)  # 记录对地图的探索度
         self.max_way_num = 12 # 单架无人机搜索的最大路径数量
+        self.pixel_length_x = 3 # 画图设置
+        self.pixel_length_y = 3 #
     def init_map(self):
         """
 
