@@ -3,7 +3,8 @@ import parameter
 import math
 import scipy.integrate
 import random
-import  typing
+import typing
+
 
 # class TargetSwarm:
 #     def __init__(self, p: parameter.Parameter):
@@ -16,7 +17,7 @@ class TargetSingle:
         self.pos_now = self.init_pos_now(tid, p)
         self.type = int(tid % p.t_type_num)  # 目标的类别
         self.move_dir = random.randint(0, 1)  # 仅针对第二类目标，
-        self.path = np.zeros([p.time_limit, 2], dtype=int)  # 走过的路径，原名wayed
+        self.path = -1 * np.ones([p.time_limit, 2], dtype=int)  # 走过的路径，原名wayed
         self.found_flag = False  # 初始状态，未被找到
         self.p_map = self.init_p_map(p)
 
@@ -65,9 +66,11 @@ class TargetSingle:
                                            lambda h: j - pos_d_l[1] + p.liy / 2)
 
         return res
+
+
 # def cal_cdf_term(y,x):
 #     theta_mus = 1/(2*p.theta2)
 #     res = np.exp(-theta_mus*((x-pos_d_l[0])**2+(y-pos_d_l[1])**2))*theta_mus/math.pi
 #     return  res
 
-Target_Swarm =typing.List[TargetSingle]
+Target_Swarm = typing.List[TargetSingle]
