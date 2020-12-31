@@ -38,8 +38,8 @@ class Parameter:
         self.beta = 1.0  # beta
         self.gama = 1.  # gama
         self.theta2 = 10.  # theta ^ 2
-        self.lampda_1 = 1.  # lampda1
-        self.lampda_2 = 1.  # lampda2
+        self.lampda_1 = 20  # lampda1 J_t
+        self.lampda_2 = 1.  # lampda2 J_c
         self.t_type_num = 3  # 目标种类
         self.t_det = 10.  #
         self.v_target = 0.5  # 目标速度

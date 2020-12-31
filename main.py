@@ -33,8 +33,8 @@ if __name__ == '__main__':
         if p.found_counter == p.nt:
             print('在第%i步全都找到了' % time_counter)
             break
-        draw(time_counter,fig, p, uav_swarm, target_swarm)
-
+        #draw(time_counter,fig, p, uav_swarm, target_swarm)
+        hot_map(time_counter, fig, p, uav_swarm, target_swarm)
         time_counter += 1
     print('main finished')
     data = {'uav_swarm': uav_swarm, 'target_swarm': target_swarm, 'p': p}
