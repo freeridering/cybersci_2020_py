@@ -11,10 +11,3 @@ import pickle
 import  target
 import  parameter
 import  uav
-
-def list_tar(target_swarm: List[target.TargetSingle]):
-    print(target_swarm[1].p_map)
-
-p = parameter.Parameter()
-target_swarm =   [target.TargetSingle(i,p) for i in range(p.nt)]
-list_tar(target_swarm)

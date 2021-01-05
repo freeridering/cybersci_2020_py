@@ -33,9 +33,6 @@ class TargetSingle:
     def init_p_map(self, p: parameter.Parameter):
         length_D = int(p.v_target * p.t_det)
         p_map_D_L = np.zeros([p.nx + 2 * length_D, p.ny + 2 * length_D], dtype=float)
-        g_map_D_L = np.pad(p.g_map, ((length_D, length_D), (length_D, length_D)), 'constant', constant_values=True)
-        tid = self.tid
-        type = self.type
         # 根据目标类型确定概率分布模型
         if self.type == 0:  # 平均分布
             p_map_D_L = np.ones([p.nx + 2 * length_D, p.ny + 2 * length_D], dtype=float)
@@ -52,6 +49,7 @@ class TargetSingle:
         else:
             print('type error')
             exit(0)
+        g_map_D_L = np.pad(p.g_map, ((length_D, length_D), (length_D, length_D)), 'constant', constant_values=True)
         p_map_D_L = p_map_D_L * (~g_map_D_L)
         p_map_D_L = p_map_D_L / np.sum(p_map_D_L)
         p_map = p_map_D_L[length_D:p.nx + length_D, length_D:p.ny + length_D]

@@ -9,6 +9,7 @@ from matplotlib.pyplot import MultipleLocator
 import parameter
 import uav
 import target
+import seaborn as sns
 
 
 def set_color(value):
@@ -73,7 +74,7 @@ def draw(time_counter: int, fig: plt.Figure, p: parameter.Parameter, uav_swarm: 
 def hot_map(time_counter: int, fig: plt.Figure, p: parameter.Parameter, uav_swarm: uav.Uav_Swarm,
             target_swarm: target.Target_Swarm):
     fig.clear()
-    ax1 = fig.add_subplot(111, aspect='equal')
+    ax1 = fig.add_subplot(1, 3, 1)
     x_pix = 4
     y_pix = 4
     xticks = [p.pixel_length_x * x_pix * i for i in range(math.ceil((p.nx + 1) / x_pix))]
@@ -104,10 +105,20 @@ def hot_map(time_counter: int, fig: plt.Figure, p: parameter.Parameter, uav_swar
     grid_xlist = [i for i in grid_xlist for _ in range(p.ny)]
     grid_ylist = [i * p.pixel_length_y + 1 for i in np.arange(0, p.ny, dtype=int) if i % (p.oy + 1) != 0] * p.nx
     plt.scatter(grid_xlist, grid_ylist, s=20, c='yellow', marker='s', zorder=2, label="grid")
-    num1 = 1.05
-    num2 = 0
-    num3 = 3
-    num4 = 0
-    plt.legend(bbox_to_anchor=(num1, num2), loc=num3, borderaxespad=num4)
+    # 标签位置
+    plt.legend(bbox_to_anchor=(1.05, 0), loc=3, borderaxespad=0)
+    # 绘制J_t和J_c
+    ax2 = fig.add_subplot(1, 3, 2)
+    for i in range(p.nu):
+        ax2.plot(range(time_counter), p.draw_meterial.Jt_max[i, 0:time_counter])
+        ax2.plot(range(time_counter), p.draw_meterial.Jc_max[i, 0:time_counter])
+        # ax2.plot(range(time_counter),
+        #          p.draw_meterial.Jc_max[i, 0:time_counter] / p.draw_meterial.Jt_max[i, 0:time_counter], label="Jc/Jt")
+    # plt.legend()
+    plt.xlim(-1, p.nx)
+    ax3 = fig.add_subplot(1, 3, 3)
+    plt.xlim(-1, p.nx + 1)
+    plt.ylim(-1, p.ny + 1)
+    sns.heatmap(p.p_map * (p.nu ** 2), mask=p.p_map == 0, cmap="RdBu_r")
     plt.pause(0.1)
     plt.draw()

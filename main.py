@@ -24,7 +24,8 @@ if __name__ == '__main__':
             pickle.dump(data, f, 0)
             f.close()
     time_counter = 0  # 步长计数器
-    fig = plt.figure()
+    fig = plt.figure(figsize=(21, 7))
+    parameter.init_draw(p)
     while time_counter < p.time_limit:
         p.fd_ct_list[time_counter] = p.found_counter
         p.detect_list[time_counter] = np.sum(p.detect_map) / np.sum(p.g_map)
@@ -33,7 +34,7 @@ if __name__ == '__main__':
         if p.found_counter == p.nt:
             print('在第%i步全都找到了' % time_counter)
             break
-        #draw(time_counter,fig, p, uav_swarm, target_swarm)
+        # draw(time_counter,fig, p, uav_swarm, target_swarm)
         hot_map(time_counter, fig, p, uav_swarm, target_swarm)
         time_counter += 1
     print('main finished')
