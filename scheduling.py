@@ -77,7 +77,6 @@ def uav_swarm_step(time_counter: int, p: parameter.Parameter, uav_swarm: uav.Uav
     for i in range(p.nu):
         search_way_global(time_counter, p, uav_swarm[i], uav_swarm, target_swarm)
         all_global[i] = np.reshape(uav_swarm[i].way_global, [1, p.n_step * 2])
-    print()
 
 
 def cal_J(j: int, p: parameter.Parameter, temp_uav: uav.UavSingle, temp_way_local: np.ndarray):
@@ -96,7 +95,7 @@ def cal_J(j: int, p: parameter.Parameter, temp_uav: uav.UavSingle, temp_way_loca
     for i in range(p.n_step):
         [temp_x, temp_y] = temp_way_local[i]
         J_t = J_t + np.exp((1 - i) / p.n_step) * np.log(1 / (1 - p.p_map[temp_x, temp_y]))
-        J_c = J_c + np.exp((1 - i) / p.n_step) *( p.beta * p.S_a[temp_x, temp_y] - p.gama * p.S_r[temp_x, temp_y])
+        J_c = J_c + np.exp((1 - i) / p.n_step) * (p.beta * p.S_a[temp_x, temp_y] - p.gama * p.S_r[temp_x, temp_y])
     # no TPM 则J_t = 0
     # J_t = 0
     # no DPM 则 J_c = 0
@@ -115,7 +114,6 @@ def search_way_global(time_counter: int, p: parameter.Parameter, temp_uav: uav.U
     for j in range(p.max_way_num):
         temp_way_local = np.reshape(temp_uav.all_way_local[j], [p.n_step, 2])  # 重塑成 n_step*2的矩阵
         cal_S_d_i(p, temp_uav, uav_swarm, temp_way_local)
-        S_d_sum = temp_uav.S_d.sum()
         if temp_way_local[0, 0] > -1:
             [temp_x, temp_y] = temp_uav.pos_now
             J_c = -p.alpha * temp_uav.S_d[temp_x, temp_y]
@@ -125,7 +123,7 @@ def search_way_global(time_counter: int, p: parameter.Parameter, temp_uav: uav.U
             for i in range(p.n_step):
                 [temp_x, temp_y] = temp_way_local[i]
                 s_a += np.exp((1 - i) / p.n_step) * p.beta * p.S_a[temp_x, temp_y]
-                s_r += p.gama * p.S_r[temp_x, temp_y]
+                s_r -= np.exp((1 - i) / p.n_step) * p.gama * p.S_r[temp_x, temp_y]
                 s_d += -p.alpha * temp_uav.S_d[temp_x, temp_y]
             J_cp = s_a + s_d + s_r
             J_t = 0
@@ -133,16 +131,15 @@ def search_way_global(time_counter: int, p: parameter.Parameter, temp_uav: uav.U
                 [temp_x, temp_y] = temp_way_local[i]
                 J_t = J_t + np.exp((1 - i) / p.n_step) * np.log(1 / (1 - p.p_map[temp_x, temp_y]))
                 J_c = J_c + np.exp((1 - i) / p.n_step) * (
-                            p.beta * p.S_a[temp_x, temp_y] - p.gama * p.S_r[temp_x, temp_y])
+                        p.beta * p.S_a[temp_x, temp_y] - p.gama * p.S_r[temp_x, temp_y])
             # no TPM 则J_t = 0
             # J_t = 0
             # no DPM 则 J_c = 0
             # J_c = 0
             uid = temp_uav.uid
             p.draw_meterial.temp_Jt[uid, j] = J_t
-            p.draw_meterial.temp_Jc[uid, j] = J_c
-            Jj = p.lampda_1 * J_t + p.lampda_2 * J_cp
-            J_total[j] = p.lampda_1 * J_t + p.lampda_2 * J_c
+            p.draw_meterial.temp_Jc[uid, j] = J_cp
+            J_total[j] = p.lampda_1 * J_t + p.lampda_2 * J_cp
 
     temp_uav.way_global = np.reshape(temp_uav.all_way_local[np.argmax(J_total)], [p.n_step, 2])
     p.draw_meterial.Jc_max[temp_uav.uid, time_counter] = p.draw_meterial.temp_Jc[temp_uav.uid][np.argmax(J_total)]
@@ -214,7 +211,7 @@ def call_path(pos_now, way, all_way, i_step, i_way, p: parameter.Parameter):
     return all_way, i_way
 
 
-def cal_J_noSd(p: parameter.Parameter, temp_uav: uav.UavSingle, temp_way_local: np.ndarray):
+def cal_J_noSd(p: parameter.Parameter, temp_way_local: np.ndarray):
     J_c = 0  # 没有Sd调度信息素
     J_t = 0
     for i in range(p.n_step):
@@ -236,7 +233,7 @@ def search_way_local(p: parameter.Parameter, uav_swarm: uav.Uav_Swarm, target_sw
         for j in range(p.max_way_num):
             temp_way_local = np.reshape(uav_swarm[i].all_way_local[j], [p.n_step, 2])
             if temp_way_local[0, 0] > -1:  # 合法路径
-                J_totnoSd[j] = cal_J_noSd(p, uav_swarm[i], temp_way_local)
+                J_totnoSd[j] = cal_J_noSd(p, temp_way_local)
         uav_swarm[i].way_local = np.reshape(uav_swarm[i].all_way_local[np.argmax(J_totnoSd)], [p.n_step, 2])
 
 
@@ -282,7 +279,7 @@ def cal_S_a(p: parameter.Parameter):
     return S_a
 
 
-def target_swarm_step(time_counter: int, p: parameter.Parameter, uav_swarm: uav.Uav_Swarm,
+def target_swarm_step(time_counter: int, p: parameter.Parameter,
                       target_swarm: target.Target_Swarm):
     p.t_map = -1 * np.ones([p.nx, p.ny], dtype=int)  # 目标地图清零
     for i in range(p.nt):

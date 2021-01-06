@@ -1,11 +1,6 @@
-import parameter
-import uav
-import target
-import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 import math
-from matplotlib.pyplot import MultipleLocator
 import parameter
 import uav
 import target
@@ -13,7 +8,7 @@ import seaborn as sns
 
 
 def set_color(value):
-    if value == True:
+    if value:
         color = 'yellow'
     else:
         color = 'blue'

@@ -3,11 +3,6 @@ import numpy as np
 import typing
 
 
-# class UavSwarm:
-#     def __init__(self, p: parameter.Parameter):
-#         self.uavs = [UavSingle(i,p) for i in range(p.nu)]
-#
-
 class UavSingle:  # 单个无人机
 
     def __init__(self, uid, p: parameter.Parameter):
