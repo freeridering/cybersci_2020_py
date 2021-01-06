@@ -34,11 +34,11 @@ class Parameter:
         self.S_r = np.zeros([self.nx, self.ny], dtype=float)  # t时刻s_r
         self.S_r_p = np.zeros([self.nx, self.ny], dtype=float)  # t - 1时刻s_r
         self.V = np.zeros([self.nx, self.ny], dtype=float)  # V
-        self.alpha = 10.0  # alpha
+        self.alpha = 1.0  # alpha
         self.beta = 1.0  # beta
         self.gama = 1.  # gama
         self.theta2 = 10.  # theta ^ 2
-        self.lampda_1 = 20  # lampda1 J_t
+        self.lampda_1 = 30.  # lampda1 J_t
         self.lampda_2 = 1.  # lampda2 J_c
         self.t_type_num = 3  # 目标种类
         self.t_det = 10.  #
@@ -47,10 +47,11 @@ class Parameter:
         self.fd_ct_list = -1 * np.ones([self.time_limit, ], dtype=float)  # 不同时刻找到的目标数量
         self.detect_map = np.zeros([self.nx, self.ny], dtype=float)
         self.detect_list = -1 * np.ones([self.time_limit, ], dtype=float)  # 记录对地图的探索度
-        self.max_way_num = 12 # 单架无人机搜索的最大路径数量
+        self.max_way_num = 12  # 单架无人机搜索的最大路径数量
         self.pixel_length_x = 3  # 画图设置
         self.pixel_length_y = 3  #
-        self.draw_meterial =  DrawMeterial(self)
+        self.draw_meterial = DrawMeterial(self)
+
     def init_map(self):
         """
 

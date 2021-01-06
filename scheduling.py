@@ -73,26 +73,30 @@ def uav_swarm_step(time_counter: int, p: parameter.Parameter, uav_swarm: uav.Uav
     p.S_r_p = p.S_r
     p.S_r = cal_S_r(p)
     search_way_local(p, uav_swarm, target_swarm)
+    all_global = np.zeros([p.nu, p.n_step * 2], dtype=int)
     for i in range(p.nu):
-        cal_S_d_i(p, uav_swarm[i], uav_swarm)
-    search_way_global(time_counter, p, uav_swarm, target_swarm)
+        search_way_global(time_counter, p, uav_swarm[i], uav_swarm, target_swarm)
+        all_global[i] = np.reshape(uav_swarm[i].way_global, [1, p.n_step * 2])
+    print()
 
 
 def cal_J(j: int, p: parameter.Parameter, temp_uav: uav.UavSingle, temp_way_local: np.ndarray):
     [temp_x, temp_y] = temp_uav.pos_now
+    J_c = -p.alpha * temp_uav.S_d[temp_x, temp_y]
+    s_d = 0
     s_a = 0
     s_r = 0
     for i in range(p.n_step):
+        [temp_x, temp_y] = temp_way_local[i]
         s_a += np.exp((1 - i) / p.n_step) * p.beta * p.S_a[temp_x, temp_y]
         s_r += p.gama * p.S_r[temp_x, temp_y]
-    s_d = -p.alpha * temp_uav.S_d[temp_x, temp_y]
-
-    J_c = -p.alpha * temp_uav.S_d[temp_x, temp_y]
+        s_d += -p.alpha * temp_uav.S_d[temp_x, temp_y]
+    J_cp = s_a + s_d + s_r
     J_t = 0
     for i in range(p.n_step):
         [temp_x, temp_y] = temp_way_local[i]
         J_t = J_t + np.exp((1 - i) / p.n_step) * np.log(1 / (1 - p.p_map[temp_x, temp_y]))
-        J_c = J_c + np.exp((1 - i) / p.n_step) * p.beta * p.S_a[temp_x, temp_y] - p.gama * p.S_r[temp_x, temp_y]
+        J_c = J_c + np.exp((1 - i) / p.n_step) *( p.beta * p.S_a[temp_x, temp_y] - p.gama * p.S_r[temp_x, temp_y])
     # no TPM 则J_t = 0
     # J_t = 0
     # no DPM 则 J_c = 0
@@ -100,39 +104,69 @@ def cal_J(j: int, p: parameter.Parameter, temp_uav: uav.UavSingle, temp_way_loca
     uid = temp_uav.uid
     p.draw_meterial.temp_Jt[uid, j] = J_t
     p.draw_meterial.temp_Jc[uid, j] = J_c
-    J_total = p.lampda_1 * J_t + p.lampda_2 * J_c
+    J_total = p.lampda_1 * J_t + p.lampda_2 * J_cp
     return J_total
 
 
-def search_way_global(time_counter: int, p: parameter.Parameter, uav_swarm: uav.Uav_Swarm,
+def search_way_global(time_counter: int, p: parameter.Parameter, temp_uav: uav.UavSingle, uav_swarm: uav.Uav_Swarm,
                       target_swarm: target.Target_Swarm):
     p.p_map = cal_total_p_map(p, target_swarm)
-    for i in range(p.nu):
-        J_total = -np.inf * np.ones([p.max_way_num, ], dtype=float)
-        for j in range(p.max_way_num):
-            temp_way_local = np.reshape(uav_swarm[i].all_way_local[j], [p.n_step, 2])  # 重塑成 n_step*2的矩阵
-            if temp_way_local[0, 0] > -1:
-                J_total[j] = cal_J(j, p, uav_swarm[i], temp_way_local)
+    J_total = -np.inf * np.ones([p.max_way_num, ], dtype=float)
+    for j in range(p.max_way_num):
+        temp_way_local = np.reshape(temp_uav.all_way_local[j], [p.n_step, 2])  # 重塑成 n_step*2的矩阵
+        cal_S_d_i(p, temp_uav, uav_swarm, temp_way_local)
+        S_d_sum = temp_uav.S_d.sum()
+        if temp_way_local[0, 0] > -1:
+            [temp_x, temp_y] = temp_uav.pos_now
+            J_c = -p.alpha * temp_uav.S_d[temp_x, temp_y]
+            s_d = 0
+            s_a = 0
+            s_r = 0
+            for i in range(p.n_step):
+                [temp_x, temp_y] = temp_way_local[i]
+                s_a += np.exp((1 - i) / p.n_step) * p.beta * p.S_a[temp_x, temp_y]
+                s_r += p.gama * p.S_r[temp_x, temp_y]
+                s_d += -p.alpha * temp_uav.S_d[temp_x, temp_y]
+            J_cp = s_a + s_d + s_r
+            J_t = 0
+            for i in range(p.n_step):
+                [temp_x, temp_y] = temp_way_local[i]
+                J_t = J_t + np.exp((1 - i) / p.n_step) * np.log(1 / (1 - p.p_map[temp_x, temp_y]))
+                J_c = J_c + np.exp((1 - i) / p.n_step) * (
+                            p.beta * p.S_a[temp_x, temp_y] - p.gama * p.S_r[temp_x, temp_y])
+            # no TPM 则J_t = 0
+            # J_t = 0
+            # no DPM 则 J_c = 0
+            # J_c = 0
+            uid = temp_uav.uid
+            p.draw_meterial.temp_Jt[uid, j] = J_t
+            p.draw_meterial.temp_Jc[uid, j] = J_c
+            Jj = p.lampda_1 * J_t + p.lampda_2 * J_cp
+            J_total[j] = p.lampda_1 * J_t + p.lampda_2 * J_c
 
-        uav_swarm[i].way_global = np.reshape(uav_swarm[i].all_way_local[np.argmax(J_total)], [p.n_step, 2])
-        p.draw_meterial.Jc_max[i, time_counter] = p.draw_meterial.temp_Jc[i][np.argmax(J_total)]
-        p.draw_meterial.Jt_max[i, time_counter] = p.draw_meterial.temp_Jt[i][np.argmax(J_total)]
+    temp_uav.way_global = np.reshape(temp_uav.all_way_local[np.argmax(J_total)], [p.n_step, 2])
+    p.draw_meterial.Jc_max[temp_uav.uid, time_counter] = p.draw_meterial.temp_Jc[temp_uav.uid][np.argmax(J_total)]
+    p.draw_meterial.Jt_max[temp_uav.uid, time_counter] = p.draw_meterial.temp_Jt[temp_uav.uid][np.argmax(J_total)]
 
 
-def cal_S_d_i(p: parameter.Parameter, temp_uav: uav.UavSingle, uav_swarm: uav.Uav_Swarm):
+def cal_S_d_i(p: parameter.Parameter, temp_uav: uav.UavSingle, uav_swarm: uav.Uav_Swarm, tempway):
     d_k = np.zeros([p.n_step, p.nx, p.ny], dtype=float)
     u_l = np.zeros([p.n_step, p.nx, p.ny], dtype=float)
     # 计算
     for i in range(p.n_step):
         for j in range(p.nu):
-            [temp_x, temp_y] = uav_swarm[i].way_local[i]
-            d_k[i, temp_x, temp_y] += 1
-        [temp_x, temp_y] = temp_uav.way_local[i]
+            if j > temp_uav.uid:
+                [temp_x, temp_y] = uav_swarm[j].way_local[i]
+                d_k[i, temp_x, temp_y] += 1
+            elif j < temp_uav.uid:
+                [temp_x, temp_y] = uav_swarm[j].way_global[i]
+                d_k[i, temp_x, temp_y] += 1
+        [temp_x, temp_y] = tempway[i]
         u_l[i, temp_x, temp_y] = 1
     S_d = np.zeros([p.nx, p.ny], dtype=float)
     for i in range(p.n_step):
-        for j in range(i):
-            S_d += np.exp((1-j+i) / p.n_step) * p.d_d * (u_l[j] * d_k[i])
+        for j in range(i + 1):
+            S_d += np.exp((1 - j + i) / p.n_step) * p.d_d * (u_l[j] * d_k[i])
     temp_uav.S_d = S_d
 
 

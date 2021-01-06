@@ -99,6 +99,7 @@ def hot_map(time_counter: int, fig: plt.Figure, p: parameter.Parameter, uav_swar
                   i.path[time_counter, 0] > -1]
     uavs_ylist = [i.path[time_counter, 1] * p.pixel_length_y + 1 for i in uav_swarm if
                   i.path[time_counter, 1] > -1]
+
     plt.scatter(uavs_xlist, uavs_ylist, s=20, c='red', marker='s', zorder=3, label="uavs")
     # grid_map散点
     grid_xlist = [i * p.pixel_length_x + 1 for i in np.arange(0, p.nx, dtype=int) if i % (p.ox + 1) != 0]
