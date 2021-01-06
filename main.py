@@ -26,7 +26,7 @@ if __name__ == '__main__':
         p.fd_ct_list[time_counter] = p.found_counter
         p.detect_list[time_counter] = np.sum(p.detect_map) / np.sum(p.g_map)
         uav_swarm_step(time_counter, p, uav_swarm, target_swarm)
-        target_swarm_step(time_counter, p, uav_swarm)
+        target_swarm_step(time_counter, p, target_swarm)
         if p.found_counter == p.nt:
             print('在第%i步全都找到了' % time_counter)
             break
