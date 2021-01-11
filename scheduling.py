@@ -147,7 +147,7 @@ def search_way_global(time_counter: int, p: parameter.Parameter, temp_uav: uav.U
                 [temp_x, temp_y] = temp_way_local[i]
                 s_a += np.exp((1 - i) / p.n_step) * p.beta * p.S_a[temp_x, temp_y]
                 s_r -= np.exp((1 - i) / p.n_step) * p.gama * p.S_r[temp_x, temp_y]
-                s_d += -p.alpha * temp_uav.S_d[temp_x, temp_y]
+                s_d += np.exp((1 - i) / p.n_step) * -p.alpha * temp_uav.S_d[temp_x, temp_y]
             J_cp = s_a + s_d + s_r
             J_t = 0
 
