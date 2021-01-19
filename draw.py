@@ -5,7 +5,7 @@ import parameter
 import uav
 import target
 import seaborn as sns
-
+from mpl_toolkits.mplot3d import Axes3D
 
 def set_color(value):
     if value:
@@ -109,9 +109,22 @@ def hot_map(time_counter: int, fig: plt.Figure, p: parameter.Parameter, uav_swar
         ax2.plot(range(time_counter), p.draw_meterial.Jt_max[i, 0:time_counter])
         ax2.plot(range(time_counter), p.draw_meterial.Jc_max[i, 0:time_counter])
         # ax2.plot(range(time_counter),
-        #          p.draw_meterial.Jc_max[i, 0:time_counter] / p.draw_meterial.Jt_max[i, 0:time_counter], label="Jc/Jt")
-    # plt.legend()
+        #      p.draw_meterial.Jc_max[i, 0:time_counter] / p.draw_meterial.Jt_max[i, 0:time_counter], label="Jc/Jt")
+    plt.legend()
     plt.xlim(-1, p.nx)
+    # ax2 = fig.gca(projection='3d')
+    # X = np.arange(0, p.nx, step=1)
+    # Y = np.arange(0, p.ny, step=1)
+    # Z = p.g_map
+    # xx,yy = np.meshgrid(X,Y)
+    # X,Y = xx.ravel(),yy.ravel()
+    # bottom = np.zeros_like(X)
+    # Z = Z.ravel()
+    # width = height = 1
+    # ax2.bar3d(X, Y, bottom, width, height, Z, shade=True)
+    # ax2.set_xlabel('X')
+    # ax2.set_ylabel('Y')
+    # ax2.set_zlabel('Z(value)')
     ax3 = fig.add_subplot(1, 3, 3)
     plt.xlim(-1, p.nx + 1)
     plt.ylim(-1, p.ny + 1)

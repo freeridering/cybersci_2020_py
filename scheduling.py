@@ -172,8 +172,8 @@ def cal_total_p_map(p: parameter.Parameter, target_swarm: target.Target_Swarm):
     for i in range(p.nt):
         if not target_swarm[i].found_flag:
             p_map = p_map * (np.ones([p.nx, p.ny], dtype=float) - target_swarm[i].p_map)
-    p_map = np.ones([p.nx, p.ny], dtype=float) - p_map
-    p_map = p_map * (~p.g_map)
+    p_map = np.ones([p.nx, p.ny], dtype=float) * (~p.g_map) - p_map
+    p_map = p_map /p_map.sum()
     return p_map
 
 
