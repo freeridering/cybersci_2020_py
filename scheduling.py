@@ -33,9 +33,7 @@ import random
 #         """
 #         self.uav_step(p)
 #         self.target_step(p)
-
-
-def uav_swarm_step(time_counter: int, p: parameter.Parameter, uav_swarm: uav.Uav_Swarm,
+def uav_update(time_counter: int, p: parameter.Parameter, uav_swarm: uav.Uav_Swarm,
                    target_swarm: target.Target_Swarm):
     p.S_a_p = p.S_a
     p.S_r_p = p.S_r
@@ -66,6 +64,39 @@ def uav_swarm_step(time_counter: int, p: parameter.Parameter, uav_swarm: uav.Uav
             target_swarm[i].p_map = target_swarm[i].p_map / p_map_sum
         elif target_swarm[i].found_flag:
             p.found_counter += target_swarm[i].found_flag
+
+
+def uav_swarm_step(time_counter: int, p: parameter.Parameter, uav_swarm: uav.Uav_Swarm,
+                   target_swarm: target.Target_Swarm):
+    # p.S_a_p = p.S_a
+    # p.S_r_p = p.S_r
+    # p.V = np.zeros([p.nx, p.ny], dtype=float)
+    # for i in range(p.nu):
+    #     [pos_nox_x, pos_nox_y] = uav_swarm[i].pos_now
+    #     p.detect_map[pos_nox_x, pos_nox_y] = 1
+    #     p.V[pos_nox_x, pos_nox_y] = 1
+    #     # 更新单无人机信息
+    #     # uav_swarm[i] = uav_single_step(time_counter, p, uav_swarm[i], target_swarm)
+    #     uav_swarm[i].pos_past = uav_swarm[i].pos_now
+    #     uav_swarm[i].path[time_counter] = uav_swarm[i].pos_now
+    #     # 改变位置
+    #     uav_swarm[i].pos_now = uav_swarm[i].way_global[0]  # 更新当前位置
+    #     # 更新概率图
+    #     # detection(p, uav_swarm[i], uav_swarm, target_swarm)
+    #     [pos_nox_x, pos_nox_y] = uav_swarm[i].pos_now
+    #     t_map_num = p.t_map[pos_nox_x, pos_nox_y]
+    #     if t_map_num != -1:  # 遇到目标
+    #         target_swarm[t_map_num].found_flag = True
+    #     for j in range(p.nt):
+    #         target_swarm[j].p_map[pos_nox_x, pos_nox_y] = 0
+    # # 除法还未加入对全0的考虑，或许也可以不修改概率地图
+    # p.found_counter = 0
+    # for i in range(p.nt):
+    #     p_map_sum = np.sum(target_swarm[i].p_map)
+    #     if not target_swarm[i].found_flag and p_map_sum != 0:
+    #         target_swarm[i].p_map = target_swarm[i].p_map / p_map_sum
+    #     elif target_swarm[i].found_flag:
+    #         p.found_counter += target_swarm[i].found_flag
 
     # 求下一步策略
     p.S_a_p = p.S_a
@@ -140,7 +171,7 @@ def search_way_global(time_counter: int, p: parameter.Parameter, temp_uav: uav.U
             p.draw_meterial.temp_Jt[uid, j] = J_t
             p.draw_meterial.temp_Jc[uid, j] = J_cp
             J_total[j] = p.lampda_1 * J_t + p.lampda_2 * J_cp
-
+    temp_uav.Jmax[time_counter] = np.max(J_total)
     temp_uav.way_global = np.reshape(temp_uav.all_way_local[np.argmax(J_total)], [p.n_step, 2])
     p.draw_meterial.Jc_max[temp_uav.uid, time_counter] = p.draw_meterial.temp_Jc[temp_uav.uid][np.argmax(J_total)]
     p.draw_meterial.Jt_max[temp_uav.uid, time_counter] = p.draw_meterial.temp_Jt[temp_uav.uid][np.argmax(J_total)]

@@ -14,6 +14,7 @@ class UavSingle:  # 单个无人机
         self.way_local = np.tile(self.pos_now.T, (p.n_step, 1))  # 短暂局部最优
         self.way_global = np.tile(self.pos_now.T, (p.n_step, 1))  # 全局最优
         self.path = -1 * np.ones([p.time_limit, 2], dtype=int)  # 走过的路径，原名wayed
+        self.Jmax = -np.inf * np.ones([p.time_limit, ], dtype=float)
 
     def init_pos_now(self, uid, p: parameter.Parameter):
         """
