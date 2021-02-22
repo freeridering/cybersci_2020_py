@@ -20,7 +20,7 @@ if __name__ == '__main__':
             pickle.dump(data, f, 0)
             f.close()
     time_counter = 0  # 步长计数器
-    fig = plt.figure(figsize=(21, 7))
+    fig = plt.figure(figsize=(14, 4))
     parameter.init_draw(p)
     while time_counter < p.time_limit:
         p.fd_ct_list[time_counter] = p.found_counter

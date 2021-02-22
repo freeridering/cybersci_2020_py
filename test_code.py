@@ -11,9 +11,9 @@ import pickle
 import target
 import parameter
 import uav
-i= []
-j = 9999999
-while True:
-    j+=1
-    i.append(i*j)
-    print(i)
+
+a = np.ones([3,3])
+b = np.ones([3,3])*6
+a[0,0] = 12
+c = b/a
+print(c)
