@@ -6,35 +6,6 @@ import random
 import optimal
 
 
-#
-# # 暂时没什么用的类
-# class EventScheduling:
-#     def __init__(self):
-#         self.event_list = []  # 事件列表
-#         self.timing = 0  # 计时器
-#
-#     def add_evevt(self):
-#         """
-#         添加事件
-#         :return:
-#         """
-#         pass
-#
-#     def fetch_event(self):
-#         """
-#         取符合要求的事件
-#         :return:
-#         """
-#         pass
-#
-#     def scheduling(self, p: parameter.Parameter):
-#         """
-#         调度过程主体
-#         :return:
-#         """
-#         self.uav_step(p)
-#         self.target_step(p)
-# 更新路径和相关信息
 def uav_update(time_counter: int, p: parameter.Parameter, uav_swarm: uav.Uav_Swarm,
                target_swarm: target.Target_Swarm):
     p.S_a_p = p.S_a
@@ -112,12 +83,10 @@ def interation_global(time_counter: int, p: parameter.Parameter, temp_uav: uav.U
                       target_swarm: target.Target_Swarm):
     p.p_map = cal_total_p_map(p, target_swarm)
     J_total = -np.inf * np.ones([p.max_way_num, ], dtype=float)
-
     for j in range(p.max_way_num):
-
         temp_way_local = np.reshape(temp_uav.all_way_local[j], [p.n_step, 2])  # 重塑成 n_step*2的矩阵
-        interation_cal_S_d_i(p, temp_uav, uav_swarm, temp_way_local)
         if temp_way_local[0, 0] > -1:
+            interation_cal_S_d_i(p, temp_uav, uav_swarm, temp_way_local)
             [temp_x, temp_y] = temp_uav.pos_now
             J_c = -p.alpha * temp_uav.S_d[temp_x, temp_y]
             s_d = 0
@@ -132,7 +101,7 @@ def interation_global(time_counter: int, p: parameter.Parameter, temp_uav: uav.U
             J_t = 0
             for i in range(p.n_step):
                 [temp_x, temp_y] = temp_way_local[i]
-                if p.p_map[temp_x, temp_y] > 0.3:
+                if p.p_map[temp_x, temp_y] > 0.9:
                     J_t = J_t + np.exp((1 - i) / p.n_step) * np.log(1 / (1 - p.p_map[temp_x, temp_y]))
                 else:
                     l_map = np.ones([p.nx, p.ny], dtype=float)
@@ -147,18 +116,16 @@ def interation_global(time_counter: int, p: parameter.Parameter, temp_uav: uav.U
             # no TPM 则J_t = 0
             # J_t = 0
             # no DPM 则 J_c = 0
-            # J_c = 0
+            # J_cp = 0
             J_total[j] = p.lampda_1 * J_t + p.lampda_2 * J_cp
     temp_uav.Jmax[time_counter] = np.max(J_total)
     temp_uav.way_global_inter = np.reshape(temp_uav.all_way_local[np.argmax(J_total)], [p.n_step, 2])
-    p.draw_meterial.Jc_max[temp_uav.uid, time_counter] = p.draw_meterial.temp_Jc[temp_uav.uid][np.argmax(J_total)]
-    p.draw_meterial.Jt_max[temp_uav.uid, time_counter] = p.draw_meterial.temp_Jt[temp_uav.uid][np.argmax(J_total)]
 
 
 def cal_manhattan(l_map: np.array, x, y, p: parameter.Parameter):
     for i in range(p.nx):
         for j in range(p.ny):
-            if i != x and j != y:
+            if i != x or j != y:
                 l_map[i, j] = abs(i - x) + abs(j - y)
     return l_map
 
@@ -183,23 +150,34 @@ def search_way_global(time_counter: int, p: parameter.Parameter, temp_uav: uav.U
                 s_d += -p.alpha * temp_uav.S_d[temp_x, temp_y]
             J_cp = s_a + s_d + s_r
             J_t = 0
+
             for i in range(p.n_step):
                 [temp_x, temp_y] = temp_way_local[i]
-                J_t = J_t + np.exp((1 - i) / p.n_step) * np.log(1 / (1 - p.p_map[temp_x, temp_y]))
+                if p.p_map[temp_x, temp_y] > 0.9:
+                    J_t = J_t + np.exp((1 - i) / p.n_step) * np.log(1 / (1 - p.p_map[temp_x, temp_y]))
+                else:
+                    l_map = np.ones([p.nx, p.ny], dtype=float)
+                    l_map = cal_manhattan(l_map, temp_x, temp_y, p)
+                    temp_p_map = p.p_map / l_map
+                    temp_p_map[temp_x, temp_y] = 0
+                    temp_p_map = np.sum(temp_p_map)
+                    J_t = J_t + np.exp((1 - i) / p.n_step) * np.log(1 / (1 - temp_p_map))
+
                 J_c = J_c + np.exp((1 - i) / p.n_step) * (
                         p.beta * p.S_a[temp_x, temp_y] - p.gama * p.S_r[temp_x, temp_y])
+
+            # for i in range(p.n_step):
+            #     [temp_x, temp_y] = temp_way_local[i]
+            #     J_t = J_t + np.exp((1 - i) / p.n_step) * np.log(1 / (1 - p.p_map[temp_x, temp_y]))
+            #     J_c = J_c + np.exp((1 - i) / p.n_step) * (
+            #             p.beta * p.S_a[temp_x, temp_y] - p.gama * p.S_r[temp_x, temp_y])
             # no TPM 则J_t = 0
             # J_t = 0
             # no DPM 则 J_c = 0
             # J_c = 0
-            uid = temp_uav.uid
-            p.draw_meterial.temp_Jt[uid, j] = J_t
-            p.draw_meterial.temp_Jc[uid, j] = J_cp
             J_total[j] = p.lampda_1 * J_t + p.lampda_2 * J_cp
     temp_uav.Jmax[time_counter] = np.max(J_total)
     temp_uav.way_global = np.reshape(temp_uav.all_way_local[np.argmax(J_total)], [p.n_step, 2])
-    p.draw_meterial.Jc_max[temp_uav.uid, time_counter] = p.draw_meterial.temp_Jc[temp_uav.uid][np.argmax(J_total)]
-    p.draw_meterial.Jt_max[temp_uav.uid, time_counter] = p.draw_meterial.temp_Jt[temp_uav.uid][np.argmax(J_total)]
 
 
 def cal_S_d_i(p: parameter.Parameter, temp_uav: uav.UavSingle, uav_swarm: uav.Uav_Swarm, tempway):

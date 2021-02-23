@@ -19,7 +19,7 @@ def set_color(value):
 def hot_map(time_counter: int, fig: plt.Figure, p: parameter.Parameter, uav_swarm: uav.Uav_Swarm,
             target_swarm: target.Target_Swarm):
     fig.clear()
-    ax1 = fig.add_subplot(1, 2, 1)
+    ax1 = fig.add_subplot(1, 3, 1)
     x_pix = 4
     y_pix = 4
     xticks = [p.pixel_length_x * x_pix * i for i in range(math.ceil((p.nx + 1) / x_pix))]
@@ -53,10 +53,18 @@ def hot_map(time_counter: int, fig: plt.Figure, p: parameter.Parameter, uav_swar
     plt.scatter(grid_xlist, grid_ylist, s=20, c='yellow', marker='s', zorder=2, label="grid")
     # 标签位置
     plt.legend(bbox_to_anchor=(1.05, 0), loc=3, borderaxespad=0)
+    # 已探索的范围
+    ax2 = fig.add_subplot(1, 3, 2)
+    plt.plot(range(time_counter), p.detect_list[0:time_counter])
+    plt.ylim(0, 1)
+    plt.xlim(0, p.time_limit)
+    plt.title('time_counter = ' + str(time_counter) + ' detect_list')
+    # 找到的目标个数
+    ax3 = fig.add_subplot(1, 3, 3)
+    plt.plot(range(time_counter), p.fd_ct_list[0:time_counter])
+    plt.ylim(0, p.nt)
+    plt.xlim(0, p.time_limit)
+    plt.title('time_counter = ' + str(time_counter) + ' fd_ct_list')
 
-    ax3 = fig.add_subplot(1, 2, 2)
-    plt.xlim(-1, p.nx + 1)
-    plt.ylim(-1, p.ny + 1)
-    sns.heatmap(p.p_map * (p.nu ** 2), mask=p.p_map == 0, cmap="RdBu_r")
     plt.pause(0.1)
     plt.draw()

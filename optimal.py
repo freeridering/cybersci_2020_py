@@ -16,12 +16,35 @@ def pso():
     pass
 
 
-def ga():
+class GA:
     """
     遗传算法
     :return:
     """
-    pass
+
+    def __init__(self, p: parameter.Parameter):
+        pass
+
+    def coding(self):
+        pass
+
+    def init_swarm(self):
+        pass
+
+    def selection(self):
+        pass
+
+    def crossover(self):
+        pass
+
+    def mutation(self):
+        pass
+
+    def cal_fitness(self):
+        pass
+
+    def decoding(self):
+        pass
 
 
 def sa():
@@ -69,7 +92,7 @@ def interation(time_counter: int, uav_swarm: uav.Uav_Swarm, target_swarm: target
     p.last_J_group = -np.Inf
     while inter_restric(time_counter, uav_swarm, p):
         for i in range(p.nu):
-            uav_swarm[i].all_way_local = scheduling.get_all_way_local(p,uav_swarm[i])
+            uav_swarm[i].all_way_local = scheduling.get_all_way_local(p, uav_swarm[i])
             scheduling.interation_global(time_counter, p, uav_swarm[i], uav_swarm, target_swarm)
         p.inter_counter += 1
     print("time_counter", time_counter, "interation end")

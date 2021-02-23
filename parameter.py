@@ -52,7 +52,7 @@ class Parameter:
         self.pixel_length_y = 3  #
         self.draw_meterial = DrawMeterial(self)
         self.last_J_group = -np.Inf  # 存储迭代的最优指标
-        self.inter_limit = 20
+        self.inter_limit = 3
         self.inter_counter = 0
     def init_map(self):
         """
