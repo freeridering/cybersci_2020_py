@@ -30,19 +30,17 @@ if __name__ == '__main__':
             uav_update(time_counter, p, uav_swarm, target_swarm)
             if p.found_counter == p.nt:
                 print('在第%i步全都找到了' % time_counter)
-                break
             else:
                 uav_swarm_step(time_counter, p, uav_swarm, target_swarm)
             target_swarm_step(time_counter, p, target_swarm)
-            #hot_map(time_counter, fig, p, uav_swarm, target_swarm)
+            # hot_map(time_counter, fig, p, uav_swarm, target_swarm)
             time_counter += 1
+            if time_counter > 170:
+                continue
+            else:
+                if p.found_counter == p.nt and time_counter > 130:
+                    loop_flag = False
         print('main finished')
-        if p.found_counter==p.nt:
-            loop_flag=False
-            print('loop end')
-
-
-
 
     data = {'uav_swarm': uav_swarm, 'target_swarm': target_swarm, 'p': p}
     with open('result.pkl', 'wb') as f:
